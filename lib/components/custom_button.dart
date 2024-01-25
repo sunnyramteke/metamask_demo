@@ -8,19 +8,21 @@ class CustomButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color? titleColor;
   final double? minWidth;
-  CustomButton({
-    Key? key,
+  final EdgeInsets? padding;
+  const CustomButton({
+    super.key,
     required this.title,
     required this.onPressed,
     this.colour = kAccentRed,
     this.titleColor,
     this.minWidth,
-  }) : super(key: key);
+    this.padding,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      padding: padding ?? const EdgeInsets.symmetric(vertical: 16.0),
       child: Material(
         color: colour,
         borderRadius: BorderRadius.circular(12.0),
