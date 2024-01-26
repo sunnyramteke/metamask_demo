@@ -72,20 +72,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Web3ModalThemeData get _themeData => Web3ModalThemeData(
-        lightColors: Web3ModalColors.lightMode,
-        //     .copyWith(
-        //   accent100: const Color.fromARGB(255, 30, 59, 236),
-        //   background100: const Color.fromARGB(255, 161, 183, 231),
-        //   // Main Modal's background color
-        //   background125: const Color.fromARGB(255, 206, 221, 255),
-        //   background175: const Color.fromARGB(255, 237, 241, 255),
-        //   inverse100: const Color.fromARGB(255, 233, 237, 236),
-        //   inverse000: const Color.fromARGB(255, 22, 18, 19),
-        //   // Main Modal's text
-        //   foreground100: const Color.fromARGB(255, 22, 18, 19),
-        //   // Secondary Modal's text
-        //   foreground150: const Color.fromARGB(255, 22, 18, 19),
-        // ),
+        lightColors: Web3ModalColors.lightMode.copyWith(
+          accent100: const Color.fromARGB(255, 30, 59, 236),
+          background100: Color(0xFF2D3CBA),
+          // Main Modal's background color
+          background125: const Color.fromARGB(255, 214, 227, 255),
+          background175: const Color.fromARGB(255, 143, 173, 255),
+          inverse100: const Color.fromARGB(255, 233, 237, 236),
+          inverse000: const Color.fromARGB(255, 22, 18, 19),
+          // Main Modal's text
+          foreground100: const Color.fromARGB(255, 22, 18, 19),
+          // Secondary Modal's text
+          foreground150: const Color.fromARGB(255, 22, 18, 19),
+        ),
         darkColors: Web3ModalColors.darkMode.copyWith(
           accent100: const Color.fromARGB(255, 161, 183, 231),
           background100: Color(0xFF0A0E21),

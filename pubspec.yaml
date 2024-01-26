@@ -39,6 +39,7 @@ dependencies:
   provider: ^6.1.1
   logger: ^2.0.2+1
   shared_preferences: ^2.2.2
+  fl_toast: ^3.2.0
 
 dev_dependencies:
   flutter_test:

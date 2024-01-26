@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:metamask_demo/components/custom_app_bar.dart';
 import 'package:metamask_demo/components/custom_button.dart';
+import 'package:web3modal_flutter/pages/select_network_page.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
+import 'package:web3modal_flutter/widgets/widget_stack/widget_stack_singleton.dart';
 
 import 'home_screen.dart';
 
@@ -28,7 +30,7 @@ class _LandingScreenState extends State<LandingScreen> {
     var hash = await _w3mService.web3App?.request(
       topic: _w3mService.session!.topic!,
       chainId: 'eip155:$_chainId',
-      request: SessionRequestParams(
+      request: const SessionRequestParams(
         method: 'personal_sign',
         params: ['GM from W3M flutter!!', '0xdeadbeef'],
       ),
@@ -46,18 +48,24 @@ class _LandingScreenState extends State<LandingScreen> {
     final isCustom = Web3ModalTheme.isCustomTheme(context);
 
     return Scaffold(
-      appBar: CustomAppBar(title: 'MetaMask SDK Dapp'),
+      appBar: const CustomAppBar(title: 'MetaMask SDK Dapp'),
       backgroundColor: Web3ModalTheme.colorsOf(context).background125,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          const Spacer(),
           CustomButton(
             title: 'Connect',
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             onPressed: () async {
               if (!_w3mService.isConnected) {
-                await _w3mService.openModal(context);
+                await _w3mService.openModal(context, SelectNetworkPage(
+                  onTapNetwork: (info) {
+                    _w3mService.selectChain(info);
+                    widgetStack.instance.addDefault();
+                  },
+                ));
                 if (_w3mService.isConnected) {
                   if (!mounted) return;
                   Navigator.of(context).push(MaterialPageRoute(
@@ -66,10 +74,19 @@ class _LandingScreenState extends State<LandingScreen> {
               }
             },
           ),
-          W3MNetworkSelectButton(service: _w3mService),
-          W3MAccountButton(service: _w3mService),
-          ElevatedButton(
-              onPressed: _onPersonalSign, child: const Text("Personal Sign"))
+          CustomButton(
+            title: 'Clear Session',
+            padding: const EdgeInsets.all(16),
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No Action Added'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );
