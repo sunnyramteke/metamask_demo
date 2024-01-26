@@ -5,6 +5,7 @@ import 'package:web3modal_flutter/pages/select_network_page.dart';
 import 'package:web3modal_flutter/web3modal_flutter.dart';
 import 'package:web3modal_flutter/widgets/widget_stack/widget_stack_singleton.dart';
 
+import '../utilities/logger.dart';
 import 'home_screen.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -35,12 +36,7 @@ class _LandingScreenState extends State<LandingScreen> {
         params: ['GM from W3M flutter!!', '0xdeadbeef'],
       ),
     );
-    debugPrint(hash);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+    logger.i(hash);
   }
 
   @override
@@ -95,7 +91,7 @@ class _LandingScreenState extends State<LandingScreen> {
   void _initializeService() async {
     W3MChainPresets.chains.putIfAbsent('11155111', () => _sepoliaChain);
     _w3mService = W3MService(
-      projectId: "005f407b9fc2a7d933227a43707545cb",
+      projectId: "91fea5ea39fc5898af040c6fd6c478c2",
       logLevel: LogLevel.error,
       metadata: const PairingMetadata(
         name: 'metamask_demo',
@@ -109,6 +105,41 @@ class _LandingScreenState extends State<LandingScreen> {
       ),
     );
     await _w3mService.init();
+
+    _w3mService.addListener(_serviceListener);
+    _w3mService.onSessionEventEvent.subscribe(_onSessionEvent);
+    _w3mService.onSessionUpdateEvent.subscribe(_onSessionUpdate);
+    _w3mService.onSessionConnectEvent.subscribe(_onSessionConnect);
+    _w3mService.onSessionDeleteEvent.subscribe(_onSessionDelete);
+  }
+
+  @override
+  void dispose() {
+    _w3mService.onSessionEventEvent.unsubscribe(_onSessionEvent);
+    _w3mService.onSessionUpdateEvent.unsubscribe(_onSessionUpdate);
+    _w3mService.onSessionConnectEvent.unsubscribe(_onSessionConnect);
+    _w3mService.onSessionDeleteEvent.unsubscribe(_onSessionDelete);
+    super.dispose();
+  }
+
+  void _serviceListener() {
+    setState(() {});
+  }
+
+  void _onSessionEvent(SessionEvent? args) {
+    logger.i('[$runtimeType] _onSessionEvent $args');
+  }
+
+  void _onSessionUpdate(SessionUpdate? args) {
+    logger.i('[$runtimeType] _onSessionUpdate $args');
+  }
+
+  void _onSessionConnect(SessionConnect? args) {
+    logger.i('[$runtimeType] _onSessionConnect $args');
+  }
+
+  void _onSessionDelete(SessionDelete? args) {
+    logger.i('[$runtimeType] _onSessionDelete $args');
   }
 }
 
@@ -119,7 +150,7 @@ final _sepoliaChain = W3MChainInfo(
   namespace: 'eip155:$_chainId',
   chainId: _chainId,
   tokenName: 'ETH',
-  rpcUrl: 'https://rpc.sepolia.org/',
+  rpcUrl: 'https://sepolia.infura.io/v3/d66891f4698b4fe68397ad9394ad66d3',
   blockExplorer: W3MBlockExplorer(
     name: 'Sepolia Explorer',
     url: 'https://sepolia.etherscan.io/',

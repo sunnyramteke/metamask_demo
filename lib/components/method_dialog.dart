@@ -61,7 +61,7 @@ class MethodDialogState extends State<MethodDialog> {
             return const SizedBox(
               width: 48,
               height: 48,
-              child: CircularProgressIndicator(),
+              child: Center(child: CircularProgressIndicator()),
             );
           }
         },
