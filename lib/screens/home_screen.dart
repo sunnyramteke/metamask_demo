@@ -6,6 +6,7 @@ import '../components/custom_app_bar.dart';
 import '../components/method_dialog.dart';
 import '../constants/colors.dart';
 import '../models/chain_metadata.dart';
+import '../models/eth/ethereum_transaction.dart';
 import '../utilities/logger.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -53,69 +54,65 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: const CustomAppBar(title: 'MetaMask SDK Dapp'),
         backgroundColor: Web3ModalTheme.colorsOf(context).background125,
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              W3MAccountButton(service: _w3mService),
-              Row(
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            W3MAccountButton(service: _w3mService),
+            Row(
+              children: [
+                if (iconImage.isNotEmpty)
+                  CircleAvatar(
+                    radius: 50.0,
+                    backgroundImage: NetworkImage(iconImage),
+                  ),
+                Expanded(
+                  child: Text(
+                    session.connectedWalletName ?? '',
+                    style: Web3ModalTheme.getDataOf(context)
+                        .textStyles
+                        .large600
+                        .copyWith(
+                          color: Web3ModalTheme.colorsOf(context).foreground100,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            Visibility(
+              visible: session.topic != null,
+              child: Column(
                 children: [
-                  if (iconImage.isNotEmpty)
-                    CircleAvatar(
-                      radius: 50.0,
-                      backgroundImage: NetworkImage(iconImage),
-                    ),
-                  Expanded(
-                    child: Text(
-                      session.connectedWalletName ?? '',
-                      style: Web3ModalTheme.getDataOf(context)
-                          .textStyles
-                          .large600
-                          .copyWith(
-                            color:
-                                Web3ModalTheme.colorsOf(context).foreground100,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
+                  Text(
+                    'Session Topic',
+                    style: Web3ModalTheme.getDataOf(context)
+                        .textStyles
+                        .small600
+                        .copyWith(
+                          color: Web3ModalTheme.colorsOf(context).foreground100,
+                        ),
+                  ),
+                  Text(
+                    '${session.topic}',
+                    style: Web3ModalTheme.getDataOf(context)
+                        .textStyles
+                        .small400
+                        .copyWith(
+                          color: Web3ModalTheme.colorsOf(context).foreground100,
+                        ),
                   ),
                 ],
               ),
-              Visibility(
-                visible: session.topic != null,
-                child: Column(
-                  children: [
-                    Text(
-                      'Session Topic',
-                      style: Web3ModalTheme.getDataOf(context)
-                          .textStyles
-                          .small600
-                          .copyWith(
-                            color:
-                                Web3ModalTheme.colorsOf(context).foreground100,
-                          ),
-                    ),
-                    Text(
-                      '${session.topic}',
-                      style: Web3ModalTheme.getDataOf(context)
-                          .textStyles
-                          .small400
-                          .copyWith(
-                            color:
-                                Web3ModalTheme.colorsOf(context).foreground100,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              ..._buildSupportedChainsWidget(),
-              ...children,
-              CustomButton(
-                title: "Disconnect",
-                onPressed: disconnectWallet,
-                padding: const EdgeInsets.all(16),
-              ),
-            ],
-          ),
+            ),
+            ..._buildSupportedChainsWidget(),
+            ...children,
+            CustomButton(
+              title: "Disconnect",
+              onPressed: disconnectWallet,
+              padding: const EdgeInsets.all(16),
+            ),
+          ],
         ),
       ),
     );
@@ -223,7 +220,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final usableMethods = [
       "personal_sign",
-      "eth_signTransaction",
       "eth_sendTransaction",
     ];
     //
@@ -258,29 +254,8 @@ class _HomeScreenState extends State<HomeScreen> {
         title: _getButtonName(usableMethods[1]),
         onPressed: approvedMethods.contains(usableMethods[1])
             ? () async {
-                // final future = callChainMethod(
-                //   chainMetadata.type,
-                //   method,
-                //   chainMetadata,
-                //   address,
-                // );
-                // //MethodDialog.show(context, method, future);
-              }
-            : null,
-      ),
-      CustomButton(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        title: _getButtonName(usableMethods[2]),
-        onPressed: approvedMethods.contains(usableMethods[2])
-            ? () async {
-                // final future = callChainMethod(
-                //   chainMetadata.type,
-                //   method,
-                //   chainMetadata,
-                //   address,
-                // );
-                // //MethodDialog.show(context, method, future);
-                // await _w3mService.launchConnectedWallet();
+                await _showTransactionDialogue(
+                    address, chainMetadata.w3mChainInfo.namespace);
               }
             : null,
       ),
@@ -344,9 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getButtonName(String method) {
     switch (method) {
       case "personal_sign":
-        return 'Personal Sign';
-      case "eth_signTransaction":
-        return 'Sign Transaction';
+        return 'Sign Message';
       case "eth_sendTransaction":
         return 'Send Transaction';
       default:
@@ -435,6 +408,195 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  _showTransactionDialogue(String address, String chainID) {
+    return showModalBottomSheet<EthereumTransaction?>(
+        enableDrag: true,
+        isDismissible: true,
+        useRootNavigator: true,
+        context: context,
+        backgroundColor: Web3ModalTheme.colorsOf(context).background175,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        )),
+        isScrollControlled: true,
+        builder: (context) {
+          String amount = '0x01',
+              from = address,
+              to = '0x0000000000000000000000000000000000000000';
+          return ClipRRect(
+            borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8.0), topRight: Radius.circular(8.0)),
+            child: Padding(
+              padding:
+                  MediaQuery.of(context).viewInsets.copyWith(left: 8, right: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Text(
+                          'Amount: ',
+                          textAlign: TextAlign.left,
+                          style: Web3ModalTheme.getDataOf(context)
+                              .textStyles
+                              .title400
+                              .copyWith(
+                                color: Web3ModalTheme.colorsOf(context)
+                                    .foreground100,
+                              ),
+                        ),
+                      ),
+                      Flexible(
+                        child: TextFormField(
+                            initialValue: amount,
+                            onChanged: (value) {
+                              amount = value;
+                            },
+                            cursorColor: kAccentRed,
+                            style: Web3ModalTheme.getDataOf(context)
+                                .textStyles
+                                .title400
+                                .copyWith(
+                                  color: Web3ModalTheme.colorsOf(context)
+                                      .foreground100,
+                                ),
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Web3ModalTheme.colorsOf(context)
+                                        .foreground100),
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            )),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Text(
+                          'From: ',
+                          textAlign: TextAlign.left,
+                          style: Web3ModalTheme.getDataOf(context)
+                              .textStyles
+                              .title400
+                              .copyWith(
+                                color: Web3ModalTheme.colorsOf(context)
+                                    .foreground100,
+                              ),
+                        ),
+                      ),
+                      Flexible(
+                        child: TextFormField(
+                            readOnly: true,
+                            initialValue: from,
+                            onChanged: (value) {
+                              from = value;
+                            },
+                            maxLines: 2,
+                            cursorColor: kAccentRed,
+                            style: Web3ModalTheme.getDataOf(context)
+                                .textStyles
+                                .title400
+                                .copyWith(
+                                  color: Web3ModalTheme.colorsOf(context)
+                                      .foreground100,
+                                ),
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Web3ModalTheme.colorsOf(context)
+                                        .foreground100),
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            )),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Text(
+                          'To: ',
+                          textAlign: TextAlign.left,
+                          style: Web3ModalTheme.getDataOf(context)
+                              .textStyles
+                              .title400
+                              .copyWith(
+                                color: Web3ModalTheme.colorsOf(context)
+                                    .foreground100,
+                              ),
+                        ),
+                      ),
+                      Flexible(
+                        child: TextFormField(
+                            initialValue: to,
+                            onChanged: (value) {
+                              from = value;
+                            },
+                            maxLines: 2,
+                            cursorColor: kAccentRed,
+                            style: Web3ModalTheme.getDataOf(context)
+                                .textStyles
+                                .title400
+                                .copyWith(
+                                  color: Web3ModalTheme.colorsOf(context)
+                                      .foreground100,
+                                ),
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Web3ModalTheme.colorsOf(context)
+                                        .foreground100),
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            )),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  CustomButton(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      title: 'Send Transaction',
+                      onPressed: () async {
+                        final future = _w3mService.request(
+                          topic: _w3mService.session?.topic ?? '',
+                          chainId: chainID,
+                          request: SessionRequestParams(
+                            method: "eth_sendTransaction",
+                            params: [
+                              EthereumTransaction(
+                                from: address,
+                                to: to,
+                                value: amount,
+                                data: '0x', // to make it work with some wallets
+                              ).toJson()
+                            ],
+                          ),
+                        );
+                        MethodDialog.show(
+                            context, 'eth_sendTransaction', future);
+                        await _w3mService.launchConnectedWallet();
+                        if (!mounted) return;
+                        Navigator.of(context).pop();
+                      }),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
